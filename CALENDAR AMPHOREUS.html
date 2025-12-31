@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amphoreus 2026 Calendar</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(to bottom right, #4c1d95, #312e81, #000000);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .calendar-wrapper {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .calendar-display {
+            position: relative;
+            background: #000;
+            aspect-ratio: 9/16;
+        }
+
+        .calendar-display img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: transform 0.5s ease;
+        }
+
+        .calendar-display:hover img {
+            transform: scale(1.05);
+        }
+
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .calendar-display:hover .overlay {
+            opacity: 1;
+        }
+
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0.3;
+        }
+
+        .calendar-display:hover .nav-btn {
+            opacity: 1;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .nav-btn.prev {
+            left: 16px;
+        }
+
+        .nav-btn.next {
+            right: 16px;
+        }
+
+        .page-indicator {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            padding: 12px 24px;
+            border-radius: 50px;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .thumbnails {
+            margin-top: 24px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+
+        .thumbnails::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .thumbnails::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .thumbnails::-webkit-scrollbar-thumb {
+            background: #8b5cf6;
+            border-radius: 3px;
+        }
+
+        .thumb {
+            flex-shrink: 0;
+            width: 60px;
+            height: 100px;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
+            opacity: 0.5;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+        }
+
+        .thumb:hover {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+
+        .thumb.active {
+            opacity: 1;
+            transform: scale(1.1);
+            border-color: #8b5cf6;
+        }
+
+        .thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .thumb-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            text-align: center;
+            padding: 4px 2px;
+        }
+
+        .info-text {
+            margin-top: 24px;
+            text-align: center;
+            color: #c4b5fd;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="calendar-wrapper">
+            <div class="calendar-display">
+                <img id="mainImage" src="cover.jpg" alt="Calendar Page">
+                <div class="overlay"></div>
+                
+                <button class="nav-btn prev" onclick="prevPage()">&#8249;</button>
+                <button class="nav-btn next" onclick="nextPage()">&#8250;</button>
+                
+                <div class="page-indicator" id="pageIndicator">Cover</div>
+            </div>
+        </div>
+
+        <div class="thumbnails" id="thumbnails"></div>
+
+        <div class="info-text">
+            Hover over the calendar for a closer look - Click arrows or thumbnails to navigate
+        </div>
+    </div>
+
+    <script>
+        var images = [
+            'image.png',
+            'image (1).png',
+            'image (2).png',
+            'image (3).png',
+            'image (4).png',
+            'image (5).png',
+            'image (6).png',
+            'image (7).png',
+            'image (8).png',
+            'image (9).png',
+            'image (10).png',
+            'image (11).png',
+            'image (12).png'
+        ];
+
+        var labels = [
+            'Cover', 'January', 'February', 'March', 'April', 'May', 
+            'June', 'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+
+        var currentPage = 0;
+
+        function updateDisplay() {
+            var mainImage = document.getElementById('mainImage');
+            var pageIndicator = document.getElementById('pageIndicator');
+            
+            mainImage.src = images[currentPage];
+            pageIndicator.textContent = labels[currentPage];
+            
+            var thumbs = document.querySelectorAll('.thumb');
+            thumbs.forEach(function(thumb, index) {
+                if (index === currentPage) {
+                    thumb.classList.add('active');
+                } else {
+                    thumb.classList.remove('active');
+                }
+            });
+        }
+
+        function nextPage() {
+            currentPage = (currentPage + 1) % images.length;
+            updateDisplay();
+        }
+
+        function prevPage() {
+            currentPage = (currentPage - 1 + images.length) % images.length;
+            updateDisplay();
+        }
+
+        function goToPage(index) {
+            currentPage = index;
+            updateDisplay();
+        }
+
+        function initThumbnails() {
+            var container = document.getElementById('thumbnails');
+            images.forEach(function(img, index) {
+                var thumb = document.createElement('div');
+                thumb.className = 'thumb';
+                if (index === 0) thumb.classList.add('active');
+                thumb.onclick = function() {
+                    goToPage(index);
+                };
+                
+                var thumbImg = document.createElement('img');
+                thumbImg.src = img;
+                thumbImg.alt = labels[index];
+                
+                var label = document.createElement('div');
+                label.className = 'thumb-label';
+                label.textContent = index === 0 ? 'Cover' : index;
+                
+                thumb.appendChild(thumbImg);
+                thumb.appendChild(label);
+                container.appendChild(thumb);
+            });
+        }
+
+        window.onload = function() {
+            initThumbnails();
+            updateDisplay();
+        };
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') prevPage();
+            if (e.key === 'ArrowRight') nextPage();
+        });
+    </script>
+</body>
+</html>
